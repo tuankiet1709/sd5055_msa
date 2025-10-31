@@ -1,0 +1,109 @@
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sd5055-msa
+---
+# MongoDB
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+  namespace: sd5055-msa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:4.2.0
+        ports:
+        - containerPort: 27017
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: sd5055-msa
+spec:
+  selector:
+    app: mongodb
+  ports:
+  - port: 27017
+---
+# Backend
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: sd5055-msa
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/sd5055-backend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: MONGODB_URL
+          value: "mongodb://mongodb:27017/todos"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: sd5055-msa
+spec:
+  selector:
+    app: backend
+  ports:
+  - port: 3000
+---
+# Frontend
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: sd5055-msa
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/sd5055-frontend:latest
+        ports:
+        - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: sd5055-msa
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 80
+    targetPort: 3000
+  type: LoadBalancer

@@ -1,0 +1,53 @@
+pipeline {
+    agent any
+    
+    parameters {
+        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Image tag to deploy')
+    }
+    
+    environment {
+        AWS_ACCOUNT_ID = credentials('aws-account-id')
+        EKS_CLUSTER = 'cicd-pipeline-cluster'
+    }
+    
+    stages {
+        stage('Setup') {
+            steps {
+                echo "Deploying image tag: ${params.IMAGE_TAG}"
+                withCredentials([
+                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh "aws eks update-kubeconfig --name ${EKS_CLUSTER} --region us-east-1"
+                }
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                sh """
+                    chmod +x deployment/deploy.sh
+                    ./deployment/deploy.sh ${params.IMAGE_TAG}
+                """
+            }
+        }
+        
+        stage('Verify') {
+            steps {
+                sh """
+                    kubectl get pods -n sd5055-msa
+                    kubectl get svc frontend -n sd5055-msa
+                """
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo "Deployment successful!"
+        }
+        failure {
+            echo "Deployment failed!"
+        }
+    }
+}
