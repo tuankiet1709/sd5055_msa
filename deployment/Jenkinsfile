@@ -2,7 +2,8 @@ pipeline {
     agent any
     
     parameters {
-        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Image tag to deploy')
+        string(name: 'FRONTEND_IMAGE_TAG', defaultValue: 'latest', description: 'Frontend image tag to deploy')
+        string(name: 'BACKEND_IMAGE_TAG', defaultValue: 'latest', description: 'Backend image tag to deploy')
     }
     
     environment {
@@ -38,7 +39,7 @@ pipeline {
         
         stage('Deploy to EKS') {
             steps {
-                echo "Deploying with image tag: ${params.IMAGE_TAG}"
+                echo "Deploying with image tag: ${params.FRONTEND_IMAGE_TAG} and ${params.BACKEND_IMAGE_TAG}"
                 withCredentials([
                     string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
@@ -50,7 +51,8 @@ pipeline {
                         
                         # Apply deployment with substitutions
                         sed "s/YOUR_ACCOUNT_ID/${AWS_ACCOUNT_ID}/g" deployment/app.yaml | \
-                        sed "s/:latest/:${params.IMAGE_TAG}/g" | \
+                        sed "s/sd5055-frontend:latest/sd5055-frontend:${params.FRONTEND_IMAGE_TAG}/g" | \
+                        sed "s/sd5055-backend:latest/sd5055-backend:${params.BACKEND_IMAGE_TAG}/g" | \
                         kubectl apply -f -
                         
                         echo "Resources applied"
