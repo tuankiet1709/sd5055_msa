@@ -4,15 +4,15 @@ pipeline {
     // Environment variables for AWS ECR
     environment {
         // AWS Configuration
-        AWS_REGION = 'us-east-1'
-        AWS_ACCOUNT_ID = credentials('aws-account-id')  // Retrieve from Jenkins credentials
-        ECR_REPOSITORY = 'sd5055-backend'  // ECR repository name
-        IMAGE_TAG = "${env.BUILD_NUMBER}"
-        ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        // AWS_REGION = 'us-east-1'
+        // AWS_ACCOUNT_ID = credentials('aws-account-id')  // Retrieve from Jenkins credentials
+        // ECR_REPOSITORY = 'sd5055-backend'  // ECR repository name
+        // IMAGE_TAG = "${env.BUILD_NUMBER}"
+        // ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
         
-        // Docker image name
-        DOCKER_IMAGE = "${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
-        DOCKER_IMAGE_LATEST = "${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+        // // Docker image name
+        // DOCKER_IMAGE = "${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+        // DOCKER_IMAGE_LATEST = "${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
     }
     
     stages {
