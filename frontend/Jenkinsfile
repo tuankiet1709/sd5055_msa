@@ -124,6 +124,6 @@ pipeline {
     //     failure {
     //         echo 'Frontend Pipeline failed!'
     //     }
-    // }
+    }
 }
 
