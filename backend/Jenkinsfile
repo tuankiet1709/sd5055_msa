@@ -4,9 +4,9 @@ pipeline {
     // Environment variables for AWS ECR
     environment {
         // AWS Configuration
-        // AWS_REGION = 'us-east-1'
+        AWS_REGION = 'us-east-1'
         // AWS_ACCOUNT_ID = credentials('aws-account-id')  // Retrieve from Jenkins credentials
-        // ECR_REPOSITORY = 'sd5055-backend'  // ECR repository name
+        ECR_REPOSITORY = 'sd5055-backend'  // ECR repository name
         // IMAGE_TAG = "${env.BUILD_NUMBER}"
         // ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
         
