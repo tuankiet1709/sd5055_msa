@@ -1,0 +1,24 @@
+# Azure deployment gitignore
+
+# Environment files with sensitive data
+.env
+*.env
+
+# Azure CLI local config
+.azure/
+
+# Kubernetes config
+kubeconfig
+*.kubeconfig
+
+# Backup files
+*.bak
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
