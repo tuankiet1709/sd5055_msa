@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sd5055-msa
+  namespace: argocd
+  annotations:
+    # ArgoCD Image Updater configuration - monitors ECR for new images
+    argocd-image-updater.argoproj.io/image-list: |
+      backend=278113052993.dkr.ecr.us-east-1.amazonaws.com/sd5055-backend,
+      frontend=278113052993.dkr.ecr.us-east-1.amazonaws.com/sd5055-frontend
+    argocd-image-updater.argoproj.io/backend.update-strategy: latest
+    argocd-image-updater.argoproj.io/frontend.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: main
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  
+  source:
+    repoURL: https://github.com/tuankiet1709/sd5055_msa.git  # TODO: Change this to your repo
+    targetRevision: main
+    path: deployment
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sd5055-msa
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

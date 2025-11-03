@@ -53,6 +53,8 @@ spec:
       labels:
         app: backend
     spec:
+      imagePullSecrets:
+      - name: ecr-secret
       containers:
       - name: backend
         image: 278113052993.dkr.ecr.us-east-1.amazonaws.com/sd5055-backend:latest
@@ -93,6 +95,8 @@ spec:
       labels:
         app: frontend
     spec:
+      imagePullSecrets:
+      - name: ecr-secret
       containers:
       - name: frontend
         image: 278113052993.dkr.ecr.us-east-1.amazonaws.com/sd5055-frontend:latest

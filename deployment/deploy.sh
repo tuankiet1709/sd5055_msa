@@ -7,9 +7,8 @@ export IMAGE_TAG="${1:-latest}"  # Use argument or default to 'latest'
 
 echo "Deploying with image tag: $IMAGE_TAG"
 
-# Replace placeholders and apply
-sed "s/YOUR_ACCOUNT_ID/$AWS_ACCOUNT_ID/g" deployment/app.yaml | \
-sed "s/:latest/:$IMAGE_TAG/g" | \
+`sed "s/YOUR_ACCOUNT_ID/$AWS_ACCOUNT_ID/g" deployment/app.yaml | \
+`sed "s/:latest/:$IMAGE_TAG/g" | \
 kubectl apply -f -
 
 echo "Waiting for deployments..."

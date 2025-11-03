@@ -1,0 +1,37 @@
+# AWS credentials for ArgoCD Image Updater to access ECR
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ecr-credentials
+  namespace: argocd
+type: Opaque
+stringData:
+  AWS_ACCESS_KEY_ID: ""
+  AWS_SECRET_ACCESS_KEY: ""
+  AWS_DEFAULT_REGION: "us-east-1"
+---
+# Git credentials for ArgoCD Image Updater to commit changes
+apiVersion: v1
+kind: Secret
+metadata:
+  name: git-creds
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+type: Opaque
+stringData:
+  type: git
+  url: https://github.com/tuankiet1709/sd5055_msa.git
+  username: 
+  password: 
+---
+# ConfigMap for Git commit configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-image-updater-config
+  namespace: argocd
+data:
+  git.user: "ArgoCD Image Updater"
+  git.email: "argocd-image-updater@noreply.com"
+  log.level: "info"
