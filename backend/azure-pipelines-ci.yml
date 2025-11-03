@@ -70,16 +70,17 @@ stages:
           az acr login --name $(acrName)
     
     # Build and push Docker image
-    - task: Docker@2
+    - task: AzureCLI@2
       displayName: 'Build Docker image'
       inputs:
-        command: 'build'
-        repository: '$(repository)'
-        dockerfile: 'backend/Dockerfile'
-        containerRegistry: '$(acrName).azurecr.io'
-        tags: |
-          $(imageTag)
-          latest
+        azureSubscription: '$(azureSubscription)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          cd frontend
+          docker build -t $(repository):$(imageTag) .
+          docker tag $(repository):$(imageTag) $(repository):latest
+          echo "Docker image built successfully"
     
     - task: AzureCLI@2
       displayName: 'Push Docker image to ACR'
