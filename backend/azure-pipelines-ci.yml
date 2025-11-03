@@ -11,7 +11,7 @@ trigger:
     - backend/*
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'Default'
 
 variables:
   acrName: 'sd5055practicaldevopsregistry'
