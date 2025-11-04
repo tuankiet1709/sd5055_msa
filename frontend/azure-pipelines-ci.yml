@@ -17,7 +17,7 @@ variables:
   acrName: 'sd5055practicaldevopsregistry'  # Your ACR name
   repository: 'sd5055-frontend'
   imageTag: '$(Build.BuildNumber)'
-  azureSubscription: 'sd5055-service-connection'  # Replace with your service connection name
+  azureSubscription: 'sd5055-service-connection'
 
 stages:
 - stage: Build
@@ -43,7 +43,7 @@ stages:
         npm ci
       displayName: 'Install dependencies'
     
-    # Run linting (add your linting command)
+    # Run linting
     - script: |
         cd frontend
         # npm run lint  # Not implemented yet
@@ -51,7 +51,7 @@ stages:
       displayName: 'Run linting'
       continueOnError: false
     
-    # Run tests (add your test command)
+    # Run tests
     - script: |
         cd frontend
         # npm test -- --watchAll=false  # Not implemented yet

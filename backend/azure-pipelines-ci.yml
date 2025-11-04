@@ -14,10 +14,10 @@ pool:
   name: 'Default'
 
 variables:
-  acrName: 'sd5055practicaldevopsregistry'
-  repository: 'sd5055-backend'
-  imageTag: '$(Build.BuildNumber)'
-  azureSubscription: 'sd5055-service-connection'
+  acrName: 'sd5055practicaldevopsregistry' # ACR name
+  repository: 'sd5055-backend' # Repository name
+  imageTag: '$(Build.BuildNumber)' # Image tag
+  azureSubscription: 'sd5055-service-connection' # Azure subscription
 
 stages:
 - stage: Build
@@ -43,7 +43,7 @@ stages:
         npm ci
       displayName: 'Install dependencies'
     
-    # Run linting (add your linting command)
+    # Run linting
     - script: |
         cd backend
         # npm run lint # Not implemented yet
@@ -51,7 +51,7 @@ stages:
       displayName: 'Run linting'
       continueOnError: false
     
-    # Run tests (add your test command)
+    # Run tests
     - script: |
         cd backend
         # npm test  # Not implemented yet
