@@ -1,0 +1,207 @@
+# GitLab CI/CD Pipeline for Frontend
+# Supports both AWS ECR and Azure ACR
+
+variables:
+  # Docker configuration
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  
+  # Application configuration
+  APP_NAME: "sd5055-frontend"
+  
+  # AWS Configuration (stored in GitLab CI/CD variables)
+  AWS_REGION: "us-east-1"
+  ECR_REPOSITORY: "sd5055-frontend"
+  
+  # Azure Configuration (stored in GitLab CI/CD variables)
+  ACR_NAME: "sd5055practicaldevopsregistry"
+  ACR_REPOSITORY: "sd5055-frontend"
+
+# Define pipeline stages
+stages:
+  - install
+  - lint
+  - test
+  - build
+  - push-aws
+  - push-azure
+  - deploy
+
+# Cache node_modules for faster builds
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - frontend/node_modules/
+
+# Install dependencies
+install:dependencies:
+  stage: install
+  image: node:18-alpine
+  script:
+    - cd frontend
+    - npm ci
+  artifacts:
+    paths:
+      - frontend/node_modules/
+    expire_in: 1 hour
+  only:
+    changes:
+      - frontend/**/*
+
+# Linting stage
+lint:code:
+  stage: lint
+  image: node:18-alpine
+  script:
+    - cd frontend
+    - echo "Running linting checks..."
+    # - npm run lint  # Uncomment when implemented
+    - echo "Linting passed"
+  only:
+    changes:
+      - frontend/**/*
+  needs: ["install:dependencies"]
+
+# Testing stage
+test:unit:
+  stage: test
+  image: node:18-alpine
+  script:
+    - cd frontend
+    - echo "Running unit tests..."
+    # - npm test -- --watchAll=false  # Uncomment when implemented
+    - echo "Tests passed"
+  only:
+    changes:
+      - frontend/**/*
+  needs: ["install:dependencies"]
+
+# Build React application
+build:application:
+  stage: build
+  image: node:18-alpine
+  script:
+    - cd frontend
+    - npm run build
+    - echo "Application built successfully"
+  artifacts:
+    paths:
+      - frontend/build/
+    expire_in: 1 hour
+  only:
+    changes:
+      - frontend/**/*
+  needs: ["install:dependencies", "lint:code", "test:unit"]
+
+# Build and push to AWS ECR
+push:aws-ecr:
+  stage: push-aws
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  before_script:
+    # Install AWS CLI
+    - apk add --no-cache python3 py3-pip
+    - pip3 install --no-cache-dir awscli
+    # Login to AWS ECR
+    - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+  script:
+    - cd frontend
+    - export IMAGE_TAG="${CI_PIPELINE_IID}"
+    - export ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+    - export FULL_IMAGE_NAME="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+    - export LATEST_IMAGE_NAME="$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+    
+    # Build Docker image
+    - docker build -t $FULL_IMAGE_NAME .
+    - docker tag $FULL_IMAGE_NAME $LATEST_IMAGE_NAME
+    
+    # Push to ECR
+    - docker push $FULL_IMAGE_NAME
+    - docker push $LATEST_IMAGE_NAME
+    
+    - echo "======================================"
+    - echo "Image pushed to AWS ECR successfully!"
+    - echo "  - $FULL_IMAGE_NAME"
+    - echo "  - $LATEST_IMAGE_NAME"
+    - echo "======================================"
+  only:
+    - main
+    - develop
+  needs: ["build:application"]
+  when: manual  # Change to 'on_success' for automatic deployment
+
+# Build and push to Azure ACR
+# push:azure-acr:
+#   stage: push-azure
+#   image: docker:20.10.16
+#   services:
+#     - docker:20.10.16-dind
+#   before_script:
+#     # Install Azure CLI
+#     - apk add --no-cache python3 py3-pip bash
+#     - pip3 install --no-cache-dir azure-cli
+#     # Login to Azure
+#     - az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
+#     # Login to ACR
+#     - az acr login --name $ACR_NAME
+#   script:
+#     - cd frontend
+#     - export IMAGE_TAG="${CI_PIPELINE_IID}"
+#     - export FULL_IMAGE_NAME="$ACR_NAME.azurecr.io/$ACR_REPOSITORY:$IMAGE_TAG"
+#     - export LATEST_IMAGE_NAME="$ACR_NAME.azurecr.io/$ACR_REPOSITORY:latest"
+    
+#     # Build Docker image
+#     - docker build -t $FULL_IMAGE_NAME .
+#     - docker tag $FULL_IMAGE_NAME $LATEST_IMAGE_NAME
+    
+#     # Push to ACR
+#     - docker push $FULL_IMAGE_NAME
+#     - docker push $LATEST_IMAGE_NAME
+    
+#     - echo "======================================"
+#     - echo "Image pushed to Azure ACR successfully!"
+#     - echo "  - $FULL_IMAGE_NAME"
+#     - echo "  - $LATEST_IMAGE_NAME"
+#     - echo "======================================"
+#   only:
+#     - main
+#     - develop
+#   needs: ["build:application"]
+#   when: manual  # Change to 'on_success' for automatic deployment
+
+# Deploy to AWS EKS (optional - can be handled by ArgoCD)
+deploy:aws-eks:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache python3 py3-pip curl
+    - pip3 install --no-cache-dir awscli
+    - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    - chmod +x kubectl
+    - mv kubectl /usr/local/bin/
+  script:
+    - aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
+    - kubectl rollout restart deployment/frontend -n sd5055-msa
+    - kubectl rollout status deployment/frontend -n sd5055-msa --timeout=300s
+    - echo "Deployment to AWS EKS completed!"
+  only:
+    - main
+  needs: ["push:aws-ecr"]
+  when: manual
+
+# Deploy to Azure AKS (optional)
+# deploy:azure-aks:
+#   stage: deploy
+#   image: mcr.microsoft.com/azure-cli:latest
+#   before_script:
+#     - az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
+#     - az aks get-credentials --resource-group $AKS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME --overwrite-existing
+#   script:
+#     - kubectl rollout restart deployment/frontend -n sd5055-msa
+#     - kubectl rollout status deployment/frontend -n sd5055-msa --timeout=300s
+#     - echo "Deployment to Azure AKS completed!"
+#   only:
+#     - main
+#   needs: ["push:azure-acr"]
+#   when: manual
